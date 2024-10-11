@@ -4,8 +4,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const Web3 = require('web3');  // For Ethereum-based blockchains
 const { Connection, PublicKey } = require('@solana/web3.js'); // For Solana
-const { TonClient } = require('@tonclient/appkit'); // For TON
-const { SuiClient, Connection: SuiConnection } = require('@mysten/sui.js'); // For SUI
+const { TonClient, abiContract, signerNone } = require('@tonclient/appkit'); // For TON
+const axios = require('axios');  // For SUI blockchain API integration
 
 const app = express();
 app.use(bodyParser.json());
@@ -23,9 +23,10 @@ const PAYMENT_WALLETS = {
 // Blockchain Clients
 const web3 = new Web3('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID');  // Ethereum provider
 const solanaConnection = new Connection('https://api.mainnet-beta.solana.com');
-const tonClient = new TonClient();  // TON client initialization
-const suiConnection = new SuiConnection({ fullnode: 'https://fullnode.mainnet.sui.io' });
-const suiClient = new SuiClient({ connection: suiConnection }); // SUI client initialization
+const tonClient = new TonClient({ network: { endpoints: ['main.ton.dev'] } });  // TON client initialization
+
+// SUI RPC URL
+const SUI_RPC_URL = 'https://fullnode.mainnet.sui.io';
 
 // Set the webhook for Telegram
 const url = process.env.RENDER_EXTERNAL_URL;
@@ -44,7 +45,7 @@ app.listen(port, () => {
 let usersData = {};  // Store user data temporarily
 let referrals = {};  // Store referral data
 
-// Fetch balances for specific blockchain, including SUI
+// Fetch balances for specific blockchain, including SUI using API
 async function fetchBalance(blockchain, userWallet) {
   switch (blockchain) {
     case 'ETH':
@@ -53,21 +54,103 @@ async function fetchBalance(blockchain, userWallet) {
       const solanaBalance = await solanaConnection.getBalance(new PublicKey(userWallet));
       return solanaBalance / 1e9;  // Convert to SOL
     case 'TON':
-      const tonBalance = await tonClient.getBalance(userWallet);
+      const tonBalance = await fetchTonBalance(userWallet);
       return tonBalance;
     case 'SUI':
-      const suiBalance = await suiClient.getCoinBalances(userWallet);  // Get SUI coin balances
-      return suiBalance.totalBalance;
+      const suiBalance = await fetchSuiBalance(userWallet);  // Fetch SUI balance using API
+      return suiBalance;
     default:
       return 0;
   }
 }
 
-// Verify Payment for Ethereum (web3.js example)
+// Fetch balance for TON
+async function fetchTonBalance(userWallet) {
+  try {
+    const result = await tonClient.net.query_collection({
+      collection: 'accounts',
+      filter: { id: { eq: userWallet } },
+      result: 'balance',
+    });
+    return result.result[0]?.balance / 1e9;  // Convert nano to TON
+  } catch (error) {
+    console.error('Error fetching TON balance:', error);
+    return 0;
+  }
+}
+
+// Fetch balance for SUI using API
+async function fetchSuiBalance(userWallet) {
+  try {
+    const response = await axios.post(SUI_RPC_URL, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "sui_getBalance",
+      params: [userWallet]
+    });
+    return response.data.result.totalBalance;
+  } catch (error) {
+    console.error('Error fetching SUI balance:', error);
+    return 0;
+  }
+}
+
+// Verify Ethereum transaction
 async function verifyEthereumTransaction(txHash, expectedAmount, expectedWallet) {
   const receipt = await web3.eth.getTransaction(txHash);
   const amount = web3.utils.fromWei(receipt.value, 'ether');
   return receipt.to.toLowerCase() === expectedWallet.toLowerCase() && amount >= expectedAmount;
+}
+
+// Verify Solana transaction
+async function verifySolanaTransaction(txHash, expectedAmount, expectedWallet) {
+  try {
+    const result = await solanaConnection.getParsedConfirmedTransaction(txHash);
+    const txDetails = result.transaction.message.accountKeys.find(account => account.pubkey.toString() === expectedWallet);
+    return txDetails && result.meta.postBalances[0] >= expectedAmount * 1e9;  // Compare balance
+  } catch (error) {
+    console.error('Error verifying Solana transaction:', error);
+    return false;
+  }
+}
+
+// Verify TON transaction
+async function verifyTonTransaction(txHash, expectedAmount, expectedWallet) {
+  try {
+    const result = await tonClient.net.query_collection({
+      collection: 'transactions',
+      filter: { id: { eq: txHash } },
+      result: 'account_addr, balance_delta',
+    });
+
+    const txDetails = result.result[0];
+    const amount = Math.abs(parseInt(txDetails.balance_delta, 10)) / 1e9;  // Convert from nanoTONs to TONs
+    return txDetails.account_addr === expectedWallet && amount >= expectedAmount;
+  } catch (error) {
+    console.error('Error verifying TON transaction:', error);
+    return false;
+  }
+}
+
+// Verify SUI transaction using the SUI RPC API
+async function verifySuiTransaction(txHash, expectedAmount, expectedWallet) {
+  try {
+    const response = await axios.post(SUI_RPC_URL, {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "sui_getTransaction",
+      params: [txHash]
+    });
+
+    const transaction = response.data.result;
+    if (transaction.sender === expectedWallet) {
+      console.log(`Transaction from ${expectedWallet} found!`);
+      return true;
+    }
+  } catch (error) {
+    console.error('Error verifying SUI transaction:', error);
+    return false;
+  }
 }
 
 // Start Command - Package Selection
@@ -142,16 +225,45 @@ bot.on('message', (msg) => {
     const blockchain = usersData[chatId].blockchain.toUpperCase();
 
     bot.sendMessage(chatId, `Verifying your transaction...`);
-    
-    // Simulate transaction verification for Ethereum
-    verifyEthereumTransaction(txHash, '0.5', PAYMENT_WALLETS[blockchain]).then(isValid => {
-      if (isValid) {
-        bot.sendMessage(chatId, 'Payment confirmed! Your boost will begin now.');
-        startBoost(chatId, usersData[chatId].package);
-      } else {
-        bot.sendMessage(chatId, 'Payment verification failed. Please check your transaction hash and try again.');
-      }
-    });
+
+    // Verify based on blockchain type
+    if (blockchain === 'ETH') {
+      verifyEthereumTransaction(txHash, '0.5', PAYMENT_WALLETS[blockchain]).then(isValid => {
+        if (isValid) {
+          bot.sendMessage(chatId, 'Payment confirmed! Your boost will begin now.');
+          startBoost(chatId, usersData[chatId].package);
+        } else {
+          bot.sendMessage(chatId, 'Payment verification failed. Please check your transaction hash and try again.');
+        }
+      });
+    } else if (blockchain === 'SOL') {
+      verifySolanaTransaction(txHash, '0.5', PAYMENT_WALLETS[blockchain]).then(isValid => {
+        if (isValid) {
+          bot.sendMessage(chatId, 'Payment confirmed! Your boost will begin now.');
+          startBoost(chatId, usersData[chatId].package);
+        } else {
+          bot.sendMessage(chatId, 'Payment verification failed. Please check your transaction hash and try again.');
+        }
+      });
+    } else if (blockchain === 'TON') {
+      verifyTonTransaction(txHash, '0.5', PAYMENT_WALLETS[blockchain]).then(isValid => {
+        if (isValid) {
+          bot.sendMessage(chatId, 'Payment confirmed! Your boost will begin now.');
+          startBoost(chatId, usersData[chatId].package);
+        } else {
+          bot.sendMessage(chatId, 'Payment verification failed. Please check your transaction hash and try again.');
+        }
+      });
+    } else if (blockchain === 'SUI') {
+      verifySuiTransaction(txHash, '0.5', PAYMENT_WALLETS[blockchain]).then(isValid => {
+        if (isValid) {
+          bot.sendMessage(chatId, 'Payment confirmed! Your boost will begin now.');
+          startBoost(chatId, usersData[chatId].package);
+        } else {
+          bot.sendMessage(chatId, 'Payment verification failed. Please check your transaction hash and try again.');
+        }
+      });
+    }
   }
 });
 
