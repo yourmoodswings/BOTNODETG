@@ -2,6 +2,13 @@ require('dotenv').config();  // Load environment variables from .env
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const bodyParser = require('body-parser');
+const Web3 = require('web3');  // For Ethereum-based blockchains
+const { Connection, PublicKey } = require('@solana/web3.js'); // For Solana
+const { TonClient } = require('@tonclient/appkit'); // For TON
+const { SuiClient, Connection: SuiConnection } = require('@mysten/sui.js'); // For SUI
+
+const app = express();
+app.use(bodyParser.json());
 
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN);
 
@@ -13,12 +20,16 @@ const PAYMENT_WALLETS = {
   SUI: process.env.SUI_WALLET
 };
 
-const app = express();
-app.use(bodyParser.json());
+// Blockchain Clients
+const web3 = new Web3('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID');  // Ethereum provider
+const solanaConnection = new Connection('https://api.mainnet-beta.solana.com');
+const tonClient = new TonClient();  // TON client initialization
+const suiConnection = new SuiConnection({ fullnode: 'https://fullnode.mainnet.sui.io' });
+const suiClient = new SuiClient({ connection: suiConnection }); // SUI client initialization
 
+// Set the webhook for Telegram
 const url = process.env.RENDER_EXTERNAL_URL;
 const port = process.env.PORT || 3000;
-
 bot.setWebHook(`${url}/bot${process.env.TELEGRAM_API_TOKEN}`);
 
 app.post(`/bot${process.env.TELEGRAM_API_TOKEN}`, (req, res) => {
@@ -30,141 +41,135 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-let usersData = {}; // To store user data temporarily
-let referrals = {}; // To track referrals and balances
+let usersData = {};  // Store user data temporarily
+let referrals = {};  // Store referral data
 
-// Start command
+// Fetch balances for specific blockchain, including SUI
+async function fetchBalance(blockchain, userWallet) {
+  switch (blockchain) {
+    case 'ETH':
+      return await web3.eth.getBalance(userWallet);
+    case 'SOL':
+      const solanaBalance = await solanaConnection.getBalance(new PublicKey(userWallet));
+      return solanaBalance / 1e9;  // Convert to SOL
+    case 'TON':
+      const tonBalance = await tonClient.getBalance(userWallet);
+      return tonBalance;
+    case 'SUI':
+      const suiBalance = await suiClient.getCoinBalances(userWallet);  // Get SUI coin balances
+      return suiBalance.totalBalance;
+    default:
+      return 0;
+  }
+}
+
+// Verify Payment for Ethereum (web3.js example)
+async function verifyEthereumTransaction(txHash, expectedAmount, expectedWallet) {
+  const receipt = await web3.eth.getTransaction(txHash);
+  const amount = web3.utils.fromWei(receipt.value, 'ether');
+  return receipt.to.toLowerCase() === expectedWallet.toLowerCase() && amount >= expectedAmount;
+}
+
+// Start Command - Package Selection
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  const username = msg.from.username || chatId;
-
-  // Check if this user was referred by someone
-  if (msg.text.includes('start=')) {
-    const referrer = msg.text.split('=')[1];
-    if (!referrals[referrer]) {
-      referrals[referrer] = { count: 0, balance: 0, referredUsers: [] };
-    }
-    referrals[referrer].count += 1;
-    referrals[referrer].balance += 0.01;  // Simulate balance increase for each referral
-    referrals[referrer].referredUsers.push(username);
-    bot.sendMessage(referrer, `You just referred a new user! Total referrals: ${referrals[referrer].count}. Your balance: ${referrals[referrer].balance.toFixed(2)} SOL.`);
-  }
-
-  usersData[chatId] = { blockchain: null, contractAddress: null, service: null, token: null, username: username }; // Reset user data
-
-  // Send welcome message with service options
-  bot.sendMessage(chatId, 'Welcome to the Volume Boost Simulation Bot! Please choose a service:', {
+  bot.sendMessage(chatId, "Welcome! Please choose a package:", {
     reply_markup: {
-      inline_keyboard: [
-        [{ text: '🚀 Start Bumping', callback_data: 'bump' }],
-        [{ text: '📈 Buy Volume Boost', callback_data: 'volume' }],
-        [{ text: '🔄 Buy Transaction Boost', callback_data: 'transaction' }],
-        [{ text: '👥 Referral Program', callback_data: 'referral' }]
-      ]
+      keyboard: [
+        [{ text: '🚀 Start Bumping' }, { text: '📈 Buy Volume Boost' }],
+        [{ text: '🔄 Buy Transaction Boost' }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true
     }
   });
+  usersData[chatId] = { step: 'package_selection' };  // Set the user's step to package selection
 });
 
-// Handle service selection and ask for blockchain
-bot.on('callback_query', (callbackQuery) => {
-  const msg = callbackQuery.message;
+// Handle package selection and move to project name input
+bot.on('message', (msg) => {
   const chatId = msg.chat.id;
-  const data = callbackQuery.data;
+  const text = msg.text;
 
-  if (['bump', 'volume', 'transaction'].includes(data)) {
-    usersData[chatId].service = data;
-    bot.sendMessage(chatId, 'Please select the blockchain for your project:', {
+  if (usersData[chatId]?.step === 'package_selection') {
+    usersData[chatId].package = text;
+    bot.sendMessage(chatId, "What is the name of your project?");
+    usersData[chatId].step = 'project_name';
+  } else if (usersData[chatId]?.step === 'project_name') {
+    usersData[chatId].projectName = text;
+    bot.sendMessage(chatId, `Great! You entered: ${text}. Now, select the blockchain for your project:`, {
       reply_markup: {
-        inline_keyboard: [
-          [{ text: 'TON', callback_data: 'blockchain_ton' }],
-          [{ text: 'Ethereum (ETH)', callback_data: 'blockchain_eth' }],
-          [{ text: 'Solana (SOL)', callback_data: 'blockchain_sol' }],
-          [{ text: 'Sui (SUI)', callback_data: 'blockchain_sui' }]
-        ]
+        keyboard: [
+          [{ text: 'TON' }, { text: 'Ethereum (ETH)' }],
+          [{ text: 'Solana (SOL)' }, { text: 'Sui (SUI)' }]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
       }
     });
-  }
-
-  // Store the user's blockchain selection and ask for contract address
-  if (data.startsWith('blockchain_')) {
-    const blockchain = data.split('_')[1]; // Extract blockchain (ton, eth, sol, sui)
-    usersData[chatId].blockchain = blockchain;
-    bot.sendMessage(chatId, `You selected ${blockchain.toUpperCase()}. Now, please enter your project contract address.`);
-  }
-
-  // Simulate referral program
-  if (data === 'referral') {
-    const username = usersData[chatId].username;
-    bot.sendMessage(chatId, `Share this referral link to earn rewards: https://t.me/YourBot?start=${username}`);
-    if (referrals[username]) {
-      bot.sendMessage(chatId, `You have referred ${referrals[username].count} users! Your balance is ${referrals[username].balance.toFixed(2)} SOL.`);
-    } else {
-      bot.sendMessage(chatId, 'You have not referred any users yet.');
-    }
-  }
-});
-
-// Handle Contract Address input
-bot.onText(/^[a-zA-Z0-9]{20,}$/, (msg) => {
-  const chatId = msg.chat.id;
-
-  if (usersData[chatId].blockchain) {
-    const contractAddress = msg.text;
-    usersData[chatId].contractAddress = contractAddress;
-    bot.sendMessage(chatId, `Verifying contract address ${contractAddress} on ${usersData[chatId].blockchain.toUpperCase()}...`);
-
-    // Simulate contract validation
+    usersData[chatId].step = 'blockchain';
+  } else if (['TON', 'Ethereum (ETH)', 'Solana (SOL)', 'Sui (SUI)'].includes(text) && usersData[chatId]?.step === 'blockchain') {
+    usersData[chatId].blockchain = text.split(' ')[0];  // Extract blockchain name
+    bot.sendMessage(chatId, `You selected ${usersData[chatId].blockchain}. Now, please enter your project contract address.`);
+    usersData[chatId].step = 'contract_address';
+  } else if (usersData[chatId]?.step === 'contract_address') {
+    usersData[chatId].contractAddress = text;
+    bot.sendMessage(chatId, `Verifying contract address ${text} on ${usersData[chatId].blockchain}...`);
+    
+    // Simulate contract verification
     setTimeout(() => {
-      bot.sendMessage(chatId, `Contract ${contractAddress} has been successfully verified! Please select the duration of the boost:`, {
+      bot.sendMessage(chatId, `Contract ${text} verified! Select the boost duration:`, {
         reply_markup: {
-          inline_keyboard: [
-            [{ text: '1 Day - 0.5 SOL', callback_data: 'duration_1_day' }],
-            [{ text: '7 Days - 2 SOL', callback_data: 'duration_7_days' }],
-            [{ text: '30 Days - 5 SOL', callback_data: 'duration_30_days' }]
-          ]
+          keyboard: [
+            [{ text: '1 Day - 0.5 SOL' }, { text: '7 Days - 2 SOL' }],
+            [{ text: '30 Days - 5 SOL' }]
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true
         }
       });
-    }, 2000); // Simulate delay
-  }
-});
-
-// Handle Payment and Confirmation
-bot.on('callback_query', (callbackQuery) => {
-  const msg = callbackQuery.message;
-  const chatId = msg.chat.id;
-  const data = callbackQuery.data;
-
-  if (data.startsWith('duration_')) {
-    const duration = data.split('_')[1]; // Extract the selected duration
+      usersData[chatId].step = 'duration';
+    }, 2000);
+  } else if (text.includes('Day') && usersData[chatId]?.step === 'duration') {
+    const duration = text.split(' ')[0];
     const blockchain = usersData[chatId].blockchain.toUpperCase();
     const paymentAddress = PAYMENT_WALLETS[blockchain];
 
-    bot.sendMessage(chatId, `You selected ${duration}. Please send the required amount to the following wallet address: ${paymentAddress}`);
-    bot.sendMessage(chatId, 'After making the payment, please enter your transaction hash to confirm the payment.');
+    bot.sendMessage(chatId, `You selected ${duration}. Please send the required amount to ${paymentAddress} and provide the transaction hash to confirm payment.`);
+    usersData[chatId].step = 'payment';
+  } else if (text.length >= 8 && usersData[chatId]?.step === 'payment') {
+    const txHash = text;
+    const blockchain = usersData[chatId].blockchain.toUpperCase();
+
+    bot.sendMessage(chatId, `Verifying your transaction...`);
+    
+    // Simulate transaction verification for Ethereum
+    verifyEthereumTransaction(txHash, '0.5', PAYMENT_WALLETS[blockchain]).then(isValid => {
+      if (isValid) {
+        bot.sendMessage(chatId, 'Payment confirmed! Your boost will begin now.');
+        startBoost(chatId, usersData[chatId].package);
+      } else {
+        bot.sendMessage(chatId, 'Payment verification failed. Please check your transaction hash and try again.');
+      }
+    });
   }
 });
 
-// Confirm Payment with Transaction Hash
-bot.onText(/^[a-zA-Z0-9]{8,}$/, (msg) => {
-  const chatId = msg.chat.id;
-
-  if (usersData[chatId].blockchain) {
-    const txHash = msg.text;
-    bot.sendMessage(chatId, `Payment confirmed with transaction hash: ${txHash}. Your boost will begin now.`);
-
-    // Simulate the boosting process
-    startBoost(chatId, usersData[chatId].service);
-  }
-});
-
-// Simulate Boost Process with less frequent updates
+// Simulate Boost Process
 function startBoost(chatId, service) {
-  bot.sendMessage(chatId, `We have added your ${service} boost to the queue. You will be notified when it starts.`);
-
+  bot.sendMessage(chatId, `Your ${service} boost has started!`);
   setTimeout(() => {
-    bot.sendMessage(chatId, `Your ${service} boost has started!`);
-    setTimeout(() => {
-      bot.sendMessage(chatId, `${service} boost completed!`);
-    }, 10000); // Simulate boost duration
-  }, 5000); // Simulate wait time before boost starts
+    bot.sendMessage(chatId, `${service} boost completed!`);
+  }, 10000);  // Simulate a boost duration
 }
+
+// Referral system and progress tracking
+bot.onText(/\/dashboard/, (msg) => {
+  const chatId = msg.chat.id;
+  const username = msg.from.username || chatId;
+
+  // Simulate referral and boost tracking
+  const referralCount = referrals[username]?.count || 0;
+  const referralLink = `https://t.me/YourBot?start=${username}`;
+  bot.sendMessage(chatId, `Boost Progress: Your current boost is in progress.\nReferrals: ${referralCount}\nReferral Link: ${referralLink}`);
+});
