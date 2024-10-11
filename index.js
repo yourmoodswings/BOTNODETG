@@ -2,11 +2,11 @@ require('dotenv').config();  // Load environment variables from .env
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const bodyParser = require('body-parser');
-const Web3 = require('web3');
-const web3 = new Web3('https://mainnet.infura.io/v3/e936f038c46e4be98c637551fc211904');  // For Ethereum-based blockchains
+const Web3 = require('web3');  // For Ethereum-based blockchains
 const { Connection, PublicKey } = require('@solana/web3.js'); // For Solana
-const { TonClient, abiContract, signerNone } = require('@tonclient/appkit'); // For TON
-const axios = require('axios');  // For SUI blockchain API integration  // Correct Web3 import
+const { TonClient } = require('@tonclient/core');  // For TON
+const { libNode } = require('@tonclient/lib-node');
+const axios = require('axios');  // For SUI blockchain API integration
 
 const app = express();
 app.use(bodyParser.json());
@@ -24,7 +24,14 @@ const PAYMENT_WALLETS = {
 // Blockchain Clients
 const web3 = new Web3('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID');  // Ethereum provider
 const solanaConnection = new Connection('https://api.mainnet-beta.solana.com');
-const tonClient = new TonClient({ network: { endpoints: ['main.ton.dev'] } });  // TON client initialization
+
+// Initialize TON Client
+TonClient.useBinaryLibrary(libNode);
+const tonClient = new TonClient({
+  network: {
+    endpoints: ['https://mainnet.evercloud.dev'],
+  },
+});
 
 // SUI RPC URL
 const SUI_RPC_URL = 'https://fullnode.mainnet.sui.io';
