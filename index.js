@@ -5,48 +5,53 @@ const bodyParser = require('body-parser');
 
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN);
 
-// Get the Render external URL and port
-const url = process.env.RENDER_EXTERNAL_URL;
-const port = process.env.PORT || 3000;
-
-// Set the webhook for Telegram
-bot.setWebHook(`${url}/bot${process.env.TELEGRAM_API_TOKEN}`);
+// Wallet addresses from .env
+const PAYMENT_WALLETS = {
+  SOL: process.env.SOL_WALLET,
+  ETH: process.env.ETH_WALLET,
+  TON: process.env.TON_WALLET,
+  SUI: process.env.SUI_WALLET
+};
 
 const app = express();
 app.use(bodyParser.json());
 
-// Webhook handler for Telegram updates
+const url = process.env.RENDER_EXTERNAL_URL;
+const port = process.env.PORT || 3000;
+
+bot.setWebHook(`${url}/bot${process.env.TELEGRAM_API_TOKEN}`);
+
 app.post(`/bot${process.env.TELEGRAM_API_TOKEN}`, (req, res) => {
-  bot.processUpdate(req.body);  // Process incoming updates
-  res.sendStatus(200);  // Respond with a 200 status to acknowledge the request
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
 });
 
-// Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// Simulated bot functionality
 let usersData = {}; // To store user data temporarily
-let referrals = {}; // To track referrals
+let referrals = {}; // To track referrals and balances
 
 // Start command
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  
+  const username = msg.from.username || chatId;
+
   // Check if this user was referred by someone
   if (msg.text.includes('start=')) {
     const referrer = msg.text.split('=')[1];
     if (!referrals[referrer]) {
-      referrals[referrer] = { count: 0, referredUsers: [] };
+      referrals[referrer] = { count: 0, balance: 0, referredUsers: [] };
     }
     referrals[referrer].count += 1;
-    referrals[referrer].referredUsers.push(chatId);
-    bot.sendMessage(referrer, `You just referred a new user! Total referrals: ${referrals[referrer].count}`);
+    referrals[referrer].balance += 0.01;  // Simulate balance increase for each referral
+    referrals[referrer].referredUsers.push(username);
+    bot.sendMessage(referrer, `You just referred a new user! Total referrals: ${referrals[referrer].count}. Your balance: ${referrals[referrer].balance.toFixed(2)} SOL.`);
   }
 
-  usersData[chatId] = { blockchain: null, contractAddress: null, service: null, token: null }; // Reset user data
-  
+  usersData[chatId] = { blockchain: null, contractAddress: null, service: null, token: null, username: username }; // Reset user data
+
   // Send welcome message with service options
   bot.sendMessage(chatId, 'Welcome to the Volume Boost Simulation Bot! Please choose a service:', {
     reply_markup: {
@@ -89,9 +94,10 @@ bot.on('callback_query', (callbackQuery) => {
 
   // Simulate referral program
   if (data === 'referral') {
-    bot.sendMessage(chatId, `Share this referral link to earn rewards: https://t.me/YourBot?start=${chatId}`);
-    if (referrals[chatId]) {
-      bot.sendMessage(chatId, `You have referred ${referrals[chatId].count} users!`);
+    const username = usersData[chatId].username;
+    bot.sendMessage(chatId, `Share this referral link to earn rewards: https://t.me/YourBot?start=${username}`);
+    if (referrals[username]) {
+      bot.sendMessage(chatId, `You have referred ${referrals[username].count} users! Your balance is ${referrals[username].balance.toFixed(2)} SOL.`);
     } else {
       bot.sendMessage(chatId, 'You have not referred any users yet.');
     }
@@ -122,7 +128,7 @@ bot.onText(/^[a-zA-Z0-9]{20,}$/, (msg) => {
   }
 });
 
-// Simulate Pricing and Payment (mocked for now)
+// Handle Payment and Confirmation
 bot.on('callback_query', (callbackQuery) => {
   const msg = callbackQuery.message;
   const chatId = msg.chat.id;
@@ -130,26 +136,35 @@ bot.on('callback_query', (callbackQuery) => {
 
   if (data.startsWith('duration_')) {
     const duration = data.split('_')[1]; // Extract the selected duration
-    bot.sendMessage(chatId, `You selected ${duration}. Please deposit the required amount to the following wallet address (simulated): 0x1234YourWallet`);
+    const blockchain = usersData[chatId].blockchain.toUpperCase();
+    const paymentAddress = PAYMENT_WALLETS[blockchain];
 
-    // Simulate deposit and start the boost
-    setTimeout(() => {
-      bot.sendMessage(chatId, `Payment confirmed! Your ${usersData[chatId].service} boost is now in progress...`);
-      simulateBoostProcess(chatId, usersData[chatId].service);
-    }, 5000); // Simulate deposit confirmation
+    bot.sendMessage(chatId, `You selected ${duration}. Please send the required amount to the following wallet address: ${paymentAddress}`);
+    bot.sendMessage(chatId, 'After making the payment, please enter your transaction hash to confirm the payment.');
   }
 });
 
-// Simulate Boost Process
-function simulateBoostProcess(chatId, service) {
-  let progress = 0;
-  const interval = setInterval(() => {
-    progress += 10;
-    bot.sendMessage(chatId, `Boosting progress: ${progress}%`);
+// Confirm Payment with Transaction Hash
+bot.onText(/^[a-zA-Z0-9]{8,}$/, (msg) => {
+  const chatId = msg.chat.id;
 
-    if (progress >= 100) {
-      clearInterval(interval);
+  if (usersData[chatId].blockchain) {
+    const txHash = msg.text;
+    bot.sendMessage(chatId, `Payment confirmed with transaction hash: ${txHash}. Your boost will begin now.`);
+
+    // Simulate the boosting process
+    startBoost(chatId, usersData[chatId].service);
+  }
+});
+
+// Simulate Boost Process with less frequent updates
+function startBoost(chatId, service) {
+  bot.sendMessage(chatId, `We have added your ${service} boost to the queue. You will be notified when it starts.`);
+
+  setTimeout(() => {
+    bot.sendMessage(chatId, `Your ${service} boost has started!`);
+    setTimeout(() => {
       bot.sendMessage(chatId, `${service} boost completed!`);
-    }
-  }, 1500); // Progress update every 1.5 seconds
+    }, 10000); // Simulate boost duration
+  }, 5000); // Simulate wait time before boost starts
 }
