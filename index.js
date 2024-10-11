@@ -1,8 +1,32 @@
 require('dotenv').config();  // Load environment variables from .env
 const TelegramBot = require('node-telegram-bot-api');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN);
 
+// Get the Render external URL and port
+const url = process.env.RENDER_EXTERNAL_URL;
+const port = process.env.PORT || 3000;
+
+// Set the webhook for Telegram
+bot.setWebHook(`${url}/bot${process.env.TELEGRAM_API_TOKEN}`);
+
+const app = express();
+app.use(bodyParser.json());
+
+// Webhook handler for Telegram updates
+app.post(`/bot${process.env.TELEGRAM_API_TOKEN}`, (req, res) => {
+  bot.processUpdate(req.body);  // Process incoming updates
+  res.sendStatus(200);  // Respond with a 200 status to acknowledge the request
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+// Simulated bot functionality
 let usersData = {}; // To store user data temporarily
 let referrals = {}; // To track referrals
 
