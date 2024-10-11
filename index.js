@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const Web3 = require('web3');  // For Ethereum-based blockchains
 const { Connection, PublicKey } = require('@solana/web3.js'); // For Solana
 const { TonClient } = require('@tonclient/core');  // For TON
-const { libWeb } = require('@tonclient/lib-web');
+const { libNode } = require('@tonclient/lib-node');  // Correct Node.js-compatible library
 const axios = require('axios');  // For SUI blockchain API integration
 
 const app = express();
@@ -25,8 +25,8 @@ const PAYMENT_WALLETS = {
 const web3 = new Web3('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID');  // Ethereum provider
 const solanaConnection = new Connection('https://api.mainnet-beta.solana.com');
 
-// Use libWeb for the pure JavaScript environment
-TonClient.useBinaryLibrary(libWeb);
+// Use libNode for Node.js environment
+TonClient.useBinaryLibrary(libNode);
 
 // TON Client initialization
 const tonClient = new TonClient({
