@@ -1,14 +1,29 @@
+require('dotenv').config();  // Load environment variables from .env
 const TelegramBot = require('node-telegram-bot-api');
 
-// Replace 'YOUR_BOT_API_TOKEN' with your bot token from BotFather
-const bot = new TelegramBot('7765013636:AAGPf5jR24a4tYZ3wgP11ATdA5OWsQKby40', { polling: true });
+const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, { polling: true });
 
 let usersData = {}; // To store user data temporarily
+let referrals = {}; // To track referrals
 
 // Start command
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
+  
+  // Check if this user was referred by someone
+  if (msg.text.includes('start=')) {
+    const referrer = msg.text.split('=')[1];
+    if (!referrals[referrer]) {
+      referrals[referrer] = { count: 0, referredUsers: [] };
+    }
+    referrals[referrer].count += 1;
+    referrals[referrer].referredUsers.push(chatId);
+    bot.sendMessage(referrer, `You just referred a new user! Total referrals: ${referrals[referrer].count}`);
+  }
+
   usersData[chatId] = { blockchain: null, contractAddress: null, service: null, token: null }; // Reset user data
+  
+  // Send welcome message with service options
   bot.sendMessage(chatId, 'Welcome to the Volume Boost Simulation Bot! Please choose a service:', {
     reply_markup: {
       inline_keyboard: [
@@ -41,10 +56,21 @@ bot.on('callback_query', (callbackQuery) => {
     });
   }
 
+  // Store the user's blockchain selection and ask for contract address
   if (data.startsWith('blockchain_')) {
     const blockchain = data.split('_')[1]; // Extract blockchain (ton, eth, sol, sui)
     usersData[chatId].blockchain = blockchain;
     bot.sendMessage(chatId, `You selected ${blockchain.toUpperCase()}. Now, please enter your project contract address.`);
+  }
+
+  // Simulate referral program
+  if (data === 'referral') {
+    bot.sendMessage(chatId, `Share this referral link to earn rewards: https://t.me/YourBot?start=${chatId}`);
+    if (referrals[chatId]) {
+      bot.sendMessage(chatId, `You have referred ${referrals[chatId].count} users!`);
+    } else {
+      bot.sendMessage(chatId, 'You have not referred any users yet.');
+    }
   }
 });
 
