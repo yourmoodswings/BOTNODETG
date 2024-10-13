@@ -22,9 +22,5 @@
     "node-telegram-bot-api": "^0.66.0",
     "web3": "^1.8.2"
   },
-{
   "type": "module"
-}
-
-  
 }
