@@ -1,6 +1,5 @@
 import express from 'express';
 import TelegramBot from 'node-telegram-bot-api';
-import clipboardy from 'clipboardy';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env
@@ -106,10 +105,9 @@ bot.on('message', (msg) => {
 
                 bot.on('message', (msg) => {
                   if (msg.text === 'Deposit') {
-                    // Generate and show bump wallet
+                    // Show bump wallet
                     const bumpWallet = '0x8a788f8f5DB2Ab7f4553964af8CFC55F671330F6';  // Example wallet
-                    clipboardy.writeSync(bumpWallet);  // Copy wallet to clipboard (server-side)
-                    bot.sendMessage(chatId, `Generating Bump Wallet...\n\nMinimum Deposit: 0.03 ETH\n\nYour Wallet: ${bumpWallet} (Tap to Copy)\nWallet address copied to your clipboard.`, {
+                    bot.sendMessage(chatId, `Generating Bump Wallet...\n\nMinimum Deposit: 0.03 ETH\n\nYour Wallet: ${bumpWallet} (Tap to Copy)`, {
                       reply_markup: {
                         keyboard: [
                           [{ text: "Back" }, { text: "Main Menu" }]
@@ -191,7 +189,6 @@ bot.on('message', (msg) => {
         bot.on('message', (msg) => {
           if (msg.text === 'Deposit') {
             const volumeWallet = '0x123456789VolumeWallet';  // Example wallet
-            clipboardy.writeSync(volumeWallet);
             bot.sendMessage(chatId, `Deposit to wallet: ${volumeWallet} (Tap to Copy)\nMinimum: $150`, {
               reply_markup: {
                 keyboard: [
@@ -246,7 +243,6 @@ bot.on('message', (msg) => {
         bot.on('message', (msg) => {
           if (msg.text === 'Deposit') {
             const transactionWallet = '0x123456789TransactionWallet';  // Example wallet
-            clipboardy.writeSync(transactionWallet);
             bot.sendMessage(chatId, `Deposit to wallet: ${transactionWallet} (Tap to Copy)\nMinimum: $200`, {
               reply_markup: {
                 keyboard: [
