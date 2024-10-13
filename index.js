@@ -1,8 +1,12 @@
-const express = require('express');
-const app = express();
-const TelegramBot = require('node-telegram-bot-api');
+import express from 'express';
+import TelegramBot from 'node-telegram-bot-api';
 import clipboardy from 'clipboardy';
-require('dotenv').config();
+import dotenv from 'dotenv';
+
+// Load environment variables from .env
+dotenv.config();
+
+const app = express();
 
 // Middleware to parse JSON bodies
 app.use(express.json());
