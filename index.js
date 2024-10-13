@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const TelegramBot = require('node-telegram-bot-api');
-const clipboardy = require('clipboardy');
+import clipboardy from 'clipboardy';
 require('dotenv').config();
 
 // Middleware to parse JSON bodies
