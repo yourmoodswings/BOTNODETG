@@ -5,21 +5,16 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-
-// Middleware to parse JSON bodies
 app.use(express.json());
 
-// Create a bot instance using webhook instead of polling
 const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, {
   webHook: true
 });
 
-// Set the webhook with the correct URL
 const url = process.env.RENDER_EXTERNAL_URL || "your-url-here";
 const port = process.env.PORT || 3000;
 bot.setWebHook(`${url}/bot${process.env.TELEGRAM_API_TOKEN}`);
 
-// Webhook endpoint
 app.post(`/bot${process.env.TELEGRAM_API_TOKEN}`, (req, res) => {
   try {
     if (req.body.message) {
@@ -35,15 +30,18 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-// Start Bumping Flow
+// Store user referral data
+let userReferrals = {};
+
+// Start Bot Interaction
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, `🤖 Welcome to Base Micro Buy & Volume Booster 🤖\n\nTo get started, please choose the service and configure your settings.\n\nServices:\n- Bumping: To get on the front page of Ape.Store\n- Volume Booster: Create a volume on Ape.Store or Uniswap\n- Transaction Booster: Create thousands of transactions to get top trends on Dexscreener\n\nCompatible Pools:\n- Ape.Store\n- Uniswap\n\nYour Bump Wallet:`, {
     reply_markup: {
       keyboard: [
-        [{ text: "🚀 Start Bumping" }, { text: "📈 Buy Volume Boost" }],
-        [{ text: "📊 Buy Transaction Boost" }, { text: "👥 Referral Program" }],
-        [{ text: "❓HELP" }]
+        [{ text: "🚀 Start Bumping" }],
+        [{ text: "📈 Buy Volume Boost", text: "📊 Buy Transaction Boost" }],
+        [{ text: "👥 Referral Program", text: "❓HELP" }]
       ],
       resize_keyboard: true,
       one_time_keyboard: true
@@ -54,6 +52,7 @@ bot.onText(/\/start/, (msg) => {
 // Main Message Logic
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
+  const username = msg.chat.username || `user${chatId}`; // Get Telegram username
 
   // Start Bumping Flow
   if (msg.text === '🚀 Start Bumping') {
@@ -72,7 +71,7 @@ bot.on('message', (msg) => {
 
   // Referral Program Flow
   if (msg.text === '👥 Referral Program') {
-    bot.sendMessage(chatId, "Here's your referral link: https://example.com/referral?id=12345\nYou have 10 successful referrals.", {
+    bot.sendMessage(chatId, `Here’s your referral link: ${url}/ref/${username}\nYou have ${userReferrals[username]?.length || 0} successful referrals.`, {
       reply_markup: {
         keyboard: [
           [{ text: "Main Menu" }, { text: "Back" }]
@@ -99,9 +98,9 @@ bot.on('message', (msg) => {
     bot.sendMessage(chatId, "Operation cancelled. Returning to the main menu.", {
       reply_markup: {
         keyboard: [
-          [{ text: "🚀 Start Bumping" }, { text: "📈 Buy Volume Boost" }],
-          [{ text: "📊 Buy Transaction Boost" }, { text: "👥 Referral Program" }],
-          [{ text: "❓HELP" }]
+          [{ text: "🚀 Start Bumping" }],
+          [{ text: "📈 Buy Volume Boost", text: "📊 Buy Transaction Boost" }],
+          [{ text: "👥 Referral Program", text: "❓HELP" }]
         ],
         resize_keyboard: true,
         one_time_keyboard: true
@@ -202,6 +201,11 @@ function handleStartBumping(chatId) {
                       ],
                       resize_keyboard: true
                     }
+                  });
+
+                  bot.once('message', () => {
+                    bot.sendMessage(chatId, `Payment successful! Your referral link is: ${url}/ref/${msg.chat.username}`);
+                    storeReferral(msg.chat.username);
                   });
                 }
               });
@@ -353,4 +357,12 @@ function handleBuyTransactionBoost(chatId) {
       });
     });
   });
+}
+
+// Utility function to store referrals
+function storeReferral(username) {
+  if (!userReferrals[username]) {
+    userReferrals[username] = [];
+  }
+  userReferrals[username].push({ referralDate: new Date() });
 }
