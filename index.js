@@ -36,7 +36,7 @@ let userReferrals = {};
 // Start Bot Interaction
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, `🤖 Welcome to Base Micro Buy & Volume Booster 🤖\n\nTo get started, please choose the service and configure your settings.\n\nServices:\n- Bumping: To get on the front page of Ape.Store\n- Volume Booster: Create a volume on Ape.Store or Uniswap\n- Transaction Booster: Create thousands of transactions to get top trends on Dexscreener\n\nCompatible Pools:\n- Ape.Store\n- Uniswap\n\nYour Bump Wallet:`, {
+  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀\n\nTo get started, please choose the service and configure your settings.\n\nServices:\n- Volume Booster: Create volume across multiple chains.\n- Micro Buy: Generate rapid micro-transactions for visibility.\n\nSelect an option to proceed:`, {
     reply_markup: {
       keyboard: [
         [{ text: "🚀 Start Bumping" }],
@@ -52,7 +52,7 @@ bot.onText(/\/start/, (msg) => {
 // Main Message Logic
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
-  const username = msg.chat.username || `user${chatId}`; // Get Telegram username
+  const username = msg.chat.username || `user${chatId}`;
 
   // Start Bumping Flow
   if (msg.text === '🚀 Start Bumping') {
@@ -64,14 +64,14 @@ bot.on('message', (msg) => {
     handleBuyVolumeBoost(chatId);
   }
 
-  // Buy Transaction Boost Flow
+  // Buy Micro Buy Boost Flow
   if (msg.text === '📊 Buy Transaction Boost') {
     handleBuyTransactionBoost(chatId);
   }
 
   // Referral Program Flow
   if (msg.text === '👥 Referral Program') {
-    bot.sendMessage(chatId, `Here’s your referral link: ${url}/ref/${username}\nYou have ${userReferrals[username]?.length || 0} successful referrals.`, {
+    bot.sendMessage(chatId, `Here's your referral link: ${url}/ref/${username}\nYou have ${userReferrals[username]?.length || 0} successful referrals.`, {
       reply_markup: {
         keyboard: [
           [{ text: "Main Menu" }, { text: "Back" }]
@@ -83,7 +83,7 @@ bot.on('message', (msg) => {
 
   // Help Flow
   if (msg.text === '❓HELP') {
-    bot.sendMessage(chatId, "For help, please contact support@example.com or visit our help page: https://example.com/help.", {
+    bot.sendMessage(chatId, "For help, please contact support@sprintbooster.com or visit our help page: https://sprintbooster.com/help.", {
       reply_markup: {
         keyboard: [
           [{ text: "Main Menu" }, { text: "Back" }]
@@ -142,6 +142,7 @@ function handleStartBumping(chatId) {
       if (msg.text === 'Cancel') return;
 
       const blockchain = msg.text;
+      const walletAddress = getWalletAddress(blockchain);
       bot.sendMessage(chatId, `You selected ${blockchain}. Please enter your project token address:`, {
         reply_markup: {
           keyboard: [
@@ -175,39 +176,19 @@ function handleStartBumping(chatId) {
               if (msg.text === 'Cancel') return;
 
               const slippage = msg.text;
-              bot.sendMessage(chatId, `You can deposit into a single mother wallet that disperses funds automatically.`, {
+              bot.sendMessage(chatId, `You can deposit to the address below:\n${walletAddress}\nPlease send the transaction hash and screenshot after payment.`, {
                 reply_markup: {
                   keyboard: [
-                    [{ text: "Deposit" }],
                     [{ text: "Cancel" }],
                     [{ text: "Back" }, { text: "Main Menu" }]
                   ],
-                  resize_keyboard: true,
-                  one_time_keyboard: true
+                  resize_keyboard: true
                 }
               });
 
-              // Handling Deposit
-              bot.on('message', (msg) => {
-                if (msg.text === 'Cancel') return;
-
-                if (msg.text === 'Deposit') {
-                  const bumpWallet = '0x8a788f8f5DB2Ab7f4553964af8CFC55F671330F6';  // Example wallet
-                  bot.sendMessage(chatId, `Your Wallet: ${bumpWallet}\nPlease send the transaction hash and a screenshot.`, {
-                    reply_markup: {
-                      keyboard: [
-                        [{ text: "Cancel" }],
-                        [{ text: "Back" }, { text: "Main Menu" }]
-                      ],
-                      resize_keyboard: true
-                    }
-                  });
-
-                  bot.once('message', () => {
-                    bot.sendMessage(chatId, `Payment successful! Your referral link is: ${url}/ref/${msg.chat.username}`);
-                    storeReferral(msg.chat.username);
-                  });
-                }
+              bot.once('message', () => {
+                bot.sendMessage(chatId, `Payment successful! Referral link: ${url}/ref/${msg.chat.username}`);
+                storeReferral(msg.chat.username);
               });
             });
           });
@@ -217,152 +198,126 @@ function handleStartBumping(chatId) {
   });
 }
 
-// Handle Buy Volume Boost Flow
-function handleBuyVolumeBoost(chatId) {
-  bot.sendMessage(chatId, `Choose your volume boost package. Please refer to the prices:\n\n- Iron Package: $150, 11,600 vol\n- Bronze Package: $300, 23,200 vol\n- Silver Package: $900, 69,000 vol\n- Gold Package: $1,800, 138,000 vol\n- Diamond Package: $3,600, 276,000 vol`, {
-    reply_markup: {
-      keyboard: [
-        [{ text: "Iron Package" }, { text: "Bronze Package" }],
-        [{ text: "Silver Package" }, { text: "Gold Package" }, { text: "Diamond Package" }],
-        [{ text: "Cancel" }],
-        [{ text: "Back" }, { text: "Main Menu" }]
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true
-    }
-  });
-
-  bot.once('message', (msg) => {
-    if (msg.text === 'Cancel') return;
-
-    const packageName = msg.text;
-    bot.sendMessage(chatId, `You selected the ${packageName}. Now enter your contract address:`, {
-      reply_markup: {
-        keyboard: [
-          [{ text: "Cancel" }],
-          [{ text: "Back" }, { text: "Main Menu" }]
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-
-    bot.once('message', (msg) => {
-      if (msg.text === 'Cancel') return;
-
-      const contractAddress = msg.text;
-      bot.sendMessage(chatId, `You entered ${contractAddress}. Choose how you will pay:`, {
-        reply_markup: {
-          keyboard: [
-            [{ text: "Deposit" }],
-            [{ text: "Cancel" }],
-            [{ text: "Back" }, { text: "Main Menu" }]
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true
-        }
-      });
-
-      // Handling Deposit
-      bot.on('message', (msg) => {
-        if (msg.text === 'Cancel') return;
-
-        if (msg.text === 'Deposit') {
-          const volumeWallet = '0x123456789VolumeWallet';  // Example wallet
-          bot.sendMessage(chatId, `Deposit to wallet: ${volumeWallet}\nMinimum: $150`, {
-            reply_markup: {
-              keyboard: [
-                [{ text: "Cancel" }],
-                [{ text: "Back" }, { text: "Main Menu" }]
-              ],
-              resize_keyboard: true
-            }
-          });
-
-          bot.once('message', () => {
-            bot.sendMessage(chatId, "Please send transaction hash and screenshot.");
-          });
-        }
-      });
-    });
-  });
+// Wallet Address Based on Blockchain
+function getWalletAddress(blockchain) {
+  switch (blockchain) {
+    case 'ETH': return '0x3142670d2362A09Eb2831ABCCc641ce8F8B08b2b';
+    case 'SOL': return 'AwhBUFkHKpASA7hsX1XpSvn77vfcKSd8wjVy14PqAqcM';
+    case 'SUI': return '0x4bd0cfb07f05f13981e415addf83a429aa0fb06769b47094ac01d3b184adf732';
+    case 'BASE': return '0x3142670d2362A09Eb2831ABCCc641ce8F8B08b2b';
+    case 'TON': return 'UQDUG_bLXg8Msf2Og6VzNd9TnXbEZUZgbVRPBqCh1QbW6EKu';
+    default: return 'Unknown Blockchain';
+  }
 }
 
-// Handle Buy Transaction Boost Flow
-function handleBuyTransactionBoost(chatId) {
-  bot.sendMessage(chatId, `Choose your transaction boost package:\n\n- Iron: $200, 3200 transactions\n- Bronze: $400, 6400 transactions\n- Silver: $1200, 19,200 transactions\n- Gold: $2400, 38,400 transactions\n- Diamond: $4800, 76,800 transactions`, {
-    reply_markup: {
-      keyboard: [
-        [{ text: "Iron" }, { text: "Bronze" }],
-        [{ text: "Silver" }, { text: "Gold" }, { text: "Diamond" }],
-        [{ text: "Cancel" }],
-        [{ text: "Back" }, { text: "Main Menu" }]
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true
-    }
-  });
-
-  bot.once('message', (msg) => {
-    if (msg.text === 'Cancel') return;
-
-    const packageName = msg.text;
-    bot.sendMessage(chatId, `You selected the ${packageName} package. Now enter your contract address:`, {
-      reply_markup: {
-        keyboard: [
-          [{ text: "Cancel" }],
-          [{ text: "Back" }, { text: "Main Menu" }]
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-
-    bot.once('message', (msg) => {
-      if (msg.text === 'Cancel') return;
-
-      const contractAddress = msg.text;
-      bot.sendMessage(chatId, `You entered ${contractAddress}. Choose how you will pay:`, {
-        reply_markup: {
-          keyboard: [
-            [{ text: "Deposit" }],
-            [{ text: "Cancel" }],
-            [{ text: "Back" }, { text: "Main Menu" }]
-          ],
-          resize_keyboard: true,
-          one_time_keyboard: true
-        }
-      });
-
-      // Handling Deposit
-      bot.on('message', (msg) => {
-        if (msg.text === 'Cancel') return;
-
-        if (msg.text === 'Deposit') {
-          const transactionWallet = '0x123456789TransactionWallet';  // Example wallet
-          bot.sendMessage(chatId, `Deposit to wallet: ${transactionWallet}\nMinimum: $200`, {
-            reply_markup: {
-              keyboard: [
-                [{ text: "Cancel" }],
-                [{ text: "Back" }, { text: "Main Menu" }]
-              ],
-              resize_keyboard: true
-            }
-          });
-
-          bot.once('message', () => {
-            bot.sendMessage(chatId, "Please send transaction hash and screenshot.");
-          });
-        }
-      });
-    });
-  });
-}
-
-// Utility function to store referrals
+// Store referrals
 function storeReferral(username) {
   if (!userReferrals[username]) {
     userReferrals[username] = [];
   }
   userReferrals[username].push({ referralDate: new Date() });
+}
+
+// Handle Buy Volume Boost Flow
+function handleBuyVolumeBoost(chatId) {
+  bot.sendMessage(chatId, `Choose your volume boost package:\n\n- Starter: $150, 11,600 vol\n- Basic: $300, 23,200 vol\n- Pro: $900, 69,000 vol\n- Advanced: $1,800, 138,000 vol\n- Ultimate: $3,600, 276,000 vol`, {
+    reply_markup: {
+      keyboard: [
+        [{ text: "Starter" }, { text: "Basic" }],
+        [{ text: "Pro" }, { text: "Advanced" }, { text: "Ultimate" }],
+        [{ text: "Cancel" }],
+        [{ text: "Back" }, { text: "Main Menu" }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true
+    }
+  });
+
+  bot.once('message', (msg) => {
+    if (msg.text === 'Cancel') return;
+
+    const packageName = msg.text;
+    bot.sendMessage(chatId, `You chose the ${packageName} package. Enter the contract address:`, {
+      reply_markup: {
+        keyboard: [
+          [{ text: "Cancel" }],
+          [{ text: "Back" }, { text: "Main Menu" }]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    });
+
+    bot.once('message', (msg) => {
+      if (msg.text === 'Cancel') return;
+
+      const contractAddress = msg.text;
+      const volumeWallet = getWalletAddress('ETH'); // Default ETH Wallet Example
+      bot.sendMessage(chatId, `Please deposit to: ${volumeWallet}\nMin amount: $150.\nSend the transaction hash & screenshot after completion.`, {
+        reply_markup: {
+          keyboard: [
+            [{ text: "Cancel" }],
+            [{ text: "Back" }, { text: "Main Menu" }]
+          ],
+          resize_keyboard: true
+        }
+      });
+
+      bot.once('message', () => {
+        bot.sendMessage(chatId, "Transaction confirmed. Thank you!");
+      });
+    });
+  });
+}
+
+// Handle Buy Micro Buy Boost Flow
+function handleBuyTransactionBoost(chatId) {
+  bot.sendMessage(chatId, `Choose your Micro Buy Boost package:\n\n- Lite: $200, 3200 transactions\n- Standard: $400, 6400 transactions\n- Premium: $1200, 19,200 transactions\n- Enterprise: $2400, 38,400 transactions\n- Supreme: $4800, 76,800 transactions`, {
+    reply_markup: {
+      keyboard: [
+        [{ text: "Lite" }, { text: "Standard" }],
+        [{ text: "Premium" }, { text: "Enterprise" }, { text: "Supreme" }],
+        [{ text: "Cancel" }],
+        [{ text: "Back" }, { text: "Main Menu" }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true
+    }
+  });
+
+  bot.once('message', (msg) => {
+    if (msg.text === 'Cancel') return;
+
+    const packageName = msg.text;
+    bot.sendMessage(chatId, `You've selected ${packageName}. Enter contract address:`, {
+      reply_markup: {
+        keyboard: [
+          [{ text: "Cancel" }],
+          [{ text: "Back" }, { text: "Main Menu" }]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    });
+
+    bot.once('message', (msg) => {
+      if (msg.text === 'Cancel') return;
+
+      const contractAddress = msg.text;
+      const microBuyWallet = getWalletAddress('ETH'); // Example Wallet
+      bot.sendMessage(chatId, `Deposit to: ${microBuyWallet}\nMin: $200.\nSend the transaction hash & screenshot once completed.`, {
+        reply_markup: {
+          keyboard: [
+            [{ text: "Cancel" }],
+            [{ text: "Back" }, { text: "Main Menu" }]
+          ],
+          resize_keyboard: true
+        }
+      });
+
+      bot.once('message', () => {
+        bot.sendMessage(chatId, "Transaction confirmed. Welcome to Sprint Multi-Chain Volume Booster & Micro Buy!");
+      });
+    });
+  });
 }
