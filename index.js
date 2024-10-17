@@ -36,12 +36,12 @@ let userReferrals = {};
 // Start Bot Interaction
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀\n\nTo get started, please choose the service and configure your settings.\n\nServices:\n- Volume Booster: Create volume across multiple chains.\n- Micro Buy: Generate rapid micro-transactions for visibility.\n\nSelect an option to proceed:`, {
+  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀\n\nTo get started, please choose the service and configure your settings.\n\nServices:\n- Bumping: To get on the front page of Ape.Store\n- Volume Booster: Create volume across multiple chains.\n- Micro Buy: Generate rapid micro-transactions for visibility.\n\nCompatible Networks:\n- ETH, SOL, TON, SUI, BASE\n\nSelect an option to proceed:`, {
     reply_markup: {
       keyboard: [
         [{ text: "🚀 Start Bumping" }],
         [{ text: "📈 Buy Volume Boost", text: "📊 Buy Transaction Boost" }],
-        [{ text: "👥 Referral Program", text: "❓HELP" }]
+        [{ text: "👥 Referral Program", text: "❓Help & Support" }]
       ],
       resize_keyboard: true,
       one_time_keyboard: true
@@ -52,7 +52,7 @@ bot.onText(/\/start/, (msg) => {
 // Main Message Logic
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
-  const username = msg.chat.username || `user${chatId}`;
+  const username = msg.chat.username || `user${chatId}`; // Get Telegram username
 
   // Start Bumping Flow
   if (msg.text === '🚀 Start Bumping') {
@@ -64,7 +64,7 @@ bot.on('message', (msg) => {
     handleBuyVolumeBoost(chatId);
   }
 
-  // Buy Micro Buy Boost Flow
+  // Buy Transaction Boost Flow
   if (msg.text === '📊 Buy Transaction Boost') {
     handleBuyTransactionBoost(chatId);
   }
@@ -81,8 +81,8 @@ bot.on('message', (msg) => {
     });
   }
 
-  // Help Flow
-  if (msg.text === '❓HELP') {
+  // Help & Support Flow
+  if (msg.text === '❓Help & Support') {
     bot.sendMessage(chatId, "For help, please contact support@sprintbooster.com or visit our help page: https://sprintbooster.com/help.", {
       reply_markup: {
         keyboard: [
@@ -100,7 +100,7 @@ bot.on('message', (msg) => {
         keyboard: [
           [{ text: "🚀 Start Bumping" }],
           [{ text: "📈 Buy Volume Boost", text: "📊 Buy Transaction Boost" }],
-          [{ text: "👥 Referral Program", text: "❓HELP" }]
+          [{ text: "👥 Referral Program", text: "❓Help & Support" }]
         ],
         resize_keyboard: true,
         one_time_keyboard: true
@@ -111,7 +111,7 @@ bot.on('message', (msg) => {
 
 // Handle Start Bumping Flow
 function handleStartBumping(chatId) {
-  bot.sendMessage(chatId, "Great! Let's get started. What's the name of your project?", {
+  bot.sendMessage(chatId, "Let's start! What's the name of your project?", {
     reply_markup: {
       keyboard: [
         [{ text: "Cancel" }],
@@ -126,7 +126,7 @@ function handleStartBumping(chatId) {
     if (msg.text === 'Cancel') return;
 
     const projectName = msg.text;
-    bot.sendMessage(chatId, `You entered project name: ${projectName}. Now, select the blockchain for your project:`, {
+    bot.sendMessage(chatId, `You entered: ${projectName}. Now, select the blockchain network:`, {
       reply_markup: {
         keyboard: [
           [{ text: "ETH" }, { text: "SOL" }, { text: "TON" }, { text: "SUI" }, { text: "BASE" }],
@@ -143,7 +143,7 @@ function handleStartBumping(chatId) {
 
       const blockchain = msg.text;
       const walletAddress = getWalletAddress(blockchain);
-      bot.sendMessage(chatId, `You selected ${blockchain}. Please enter your project token address:`, {
+      bot.sendMessage(chatId, `Selected network: ${blockchain}. Please enter your project token address:`, {
         reply_markup: {
           keyboard: [
             [{ text: "Cancel" }],
@@ -158,25 +158,25 @@ function handleStartBumping(chatId) {
         if (msg.text === 'Cancel') return;
 
         const tokenAddress = msg.text;
-        bot.sendMessage(chatId, `Enter the amount of coin per bump (in ${blockchain} equivalent):`);
+        bot.sendMessage(chatId, `Specify the amount of coin per bump (in ${blockchain} equivalent):`);
 
         bot.once('message', (msg) => {
           if (msg.text === 'Cancel') return;
 
           const coinAmount = msg.text;
-          bot.sendMessage(chatId, `Select bump frequency (in seconds) or type 'random':`);
+          bot.sendMessage(chatId, `Set bump frequency (in seconds) or type 'random':`);
 
           bot.once('message', (msg) => {
             if (msg.text === 'Cancel') return;
 
             const frequency = msg.text;
-            bot.sendMessage(chatId, `Enter slippage percentage (1-100%):`);
+            bot.sendMessage(chatId, `Define slippage percentage (1-100%):`);
 
             bot.once('message', (msg) => {
               if (msg.text === 'Cancel') return;
 
               const slippage = msg.text;
-              bot.sendMessage(chatId, `You can deposit to the address below:\n${walletAddress}\nPlease send the transaction hash and screenshot after payment.`, {
+              bot.sendMessage(chatId, `To proceed, deposit into the following address for automatic fund distribution:\n${walletAddress}\nPlease send the transaction hash and screenshot after payment.`, {
                 reply_markup: {
                   keyboard: [
                     [{ text: "Cancel" }],
@@ -237,7 +237,7 @@ function handleBuyVolumeBoost(chatId) {
     if (msg.text === 'Cancel') return;
 
     const packageName = msg.text;
-    bot.sendMessage(chatId, `You chose the ${packageName} package. Enter the contract address:`, {
+    bot.sendMessage(chatId, `You've selected the ${packageName} package. Please enter your contract address:`, {
       reply_markup: {
         keyboard: [
           [{ text: "Cancel" }],
@@ -252,8 +252,8 @@ function handleBuyVolumeBoost(chatId) {
       if (msg.text === 'Cancel') return;
 
       const contractAddress = msg.text;
-      const volumeWallet = getWalletAddress('ETH'); // Default ETH Wallet Example
-      bot.sendMessage(chatId, `Please deposit to: ${volumeWallet}\nMin amount: $150.\nSend the transaction hash & screenshot after completion.`, {
+      const walletAddress = getWalletAddress('ETH'); // Default ETH wallet example
+      bot.sendMessage(chatId, `Please deposit to: ${walletAddress}\nMin amount: $150.\nSend the transaction hash & screenshot after completion.`, {
         reply_markup: {
           keyboard: [
             [{ text: "Cancel" }],
@@ -270,9 +270,9 @@ function handleBuyVolumeBoost(chatId) {
   });
 }
 
-// Handle Buy Micro Buy Boost Flow
+// Handle Buy Transaction Boost Flow
 function handleBuyTransactionBoost(chatId) {
-  bot.sendMessage(chatId, `Choose your Micro Buy Boost package:\n\n- Lite: $200, 3200 transactions\n- Standard: $400, 6400 transactions\n- Premium: $1200, 19,200 transactions\n- Enterprise: $2400, 38,400 transactions\n- Supreme: $4800, 76,800 transactions`, {
+  bot.sendMessage(chatId, `Choose your transaction boost package:\n\n- Lite: $200, 3200 transactions\n- Standard: $400, 6400 transactions\n- Premium: $1200, 19,200 transactions\n- Enterprise: $2400, 38,400 transactions\n- Supreme: $4800, 76,800 transactions`, {
     reply_markup: {
       keyboard: [
         [{ text: "Lite" }, { text: "Standard" }],
@@ -289,7 +289,7 @@ function handleBuyTransactionBoost(chatId) {
     if (msg.text === 'Cancel') return;
 
     const packageName = msg.text;
-    bot.sendMessage(chatId, `You've selected ${packageName}. Enter contract address:`, {
+    bot.sendMessage(chatId, `You've selected the ${packageName}. Enter your contract address:`, {
       reply_markup: {
         keyboard: [
           [{ text: "Cancel" }],
@@ -304,8 +304,8 @@ function handleBuyTransactionBoost(chatId) {
       if (msg.text === 'Cancel') return;
 
       const contractAddress = msg.text;
-      const microBuyWallet = getWalletAddress('ETH'); // Example Wallet
-      bot.sendMessage(chatId, `Deposit to: ${microBuyWallet}\nMin: $200.\nSend the transaction hash & screenshot once completed.`, {
+      const walletAddress = getWalletAddress('ETH'); // Example wallet
+      bot.sendMessage(chatId, `Deposit to: ${walletAddress}\nMin amount: $200.\nSend the transaction hash & screenshot after completion.`, {
         reply_markup: {
           keyboard: [
             [{ text: "Cancel" }],
