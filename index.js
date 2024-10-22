@@ -45,7 +45,7 @@ const wallets = {
 // Start Bot Interaction
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀\n\nTo get started, please choose a service and configure your preferences.\n\nServices Available:\n- Volume Booster: Boost volume across multiple platforms.\n- Micro Buy: Generate rapid micro-transactions for maximum visibility.\n\nCompatible Platforms:\n- Multiple Chain Networks & Exchanges\n\nSelect an option to proceed:`, {
+  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀\n\nMaximize your project's visibility with our Volume Booster and Micro Buy services.\nBoost your ranking across decentralized exchanges (DEXs) and trading platforms across multiple blockchains. Whether you're looking to climb the trending charts or increase your token's volume, Sprint provides the tools to dominate.\n\n📈 Services Available:\n• **Volume Booster**: Amplify token volume on DEXs.\n• **Micro Buy**: Generate rapid micro-transactions for visibility.\n• **Bumping**: Feature your token on top trading platforms like Pump.fun.\n\n🌐 Supported Chains & Compatible Pools:\n1. **Ethereum (ETH)**: Uniswap (V2/V3)\n2. **Solana (SOL)**: Raydium, PumpFun\n3. **Base (BASE)**: Uniswap, Apestore\n4. **Sui (SUI)**: Cetus, SuiSwap, MovePump\n5. **TON (The Open Network)**: All swaps, Gas Pump\n\nSelect an option to proceed:`, {
     reply_markup: {
       keyboard: [
         [{ text: "🚀 Start Bumping" }],
@@ -151,7 +151,7 @@ function handleStartBumping(chatId) {
       if (msg.text === 'Cancel') return;
 
       const blockchain = msg.text;
-      bot.sendMessage(chatId, `Network: ${blockchain}. Please enter your project token address:`, {
+      bot.sendMessage(chatId, `Network: ${blockchain}. Please enter your project token address or submit a link from the supported pools for ${blockchain}:`, {
         reply_markup: {
           keyboard: [
             [{ text: "Cancel" }],
@@ -227,7 +227,7 @@ function handleVolumeBoost(chatId) {
     if (msg.text === 'Cancel') return;
 
     const packageName = msg.text;
-    bot.sendMessage(chatId, `You chose the ${packageName} package. Enter the contract address:`, {
+    bot.sendMessage(chatId, `You chose the ${packageName} package. Enter the contract address or submit a pool link:`, {
       reply_markup: {
         keyboard: [
           [{ text: "Cancel" }],
@@ -297,7 +297,7 @@ function handleMicroBuyBoost(chatId) {
     if (msg.text === 'Cancel') return;
 
     const packageName = msg.text;
-    bot.sendMessage(chatId, `You've selected ${packageName}. Enter contract address:`, {
+    bot.sendMessage(chatId, `You've selected ${packageName}. Enter contract address or submit a pool link:`, {
       reply_markup: {
         keyboard: [
           [{ text: "Cancel" }],
