@@ -45,7 +45,22 @@ const wallets = {
 // Start Bot Interaction
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀\n\nMaximize your project's visibility with our Volume Booster and Micro Buy services.\nBoost your ranking across decentralized exchanges (DEXs) and trading platforms across multiple blockchains. Whether you're looking to climb the trending charts or increase your token's volume, Sprint provides the tools to dominate.\n\n📈 Services Available:\n• **Volume Booster**: Amplify token volume on DEXs.\n• **Micro Buy**: Generate rapid micro-transactions for visibility.\n• **Bumping**: Feature your token on top trading platforms like Pump.fun.\n\n🌐 Supported Chains & Compatible Pools:\n1. **Ethereum (ETH)**: Uniswap (V2/V3)\n2. **Solana (SOL)**: Raydium, PumpFun\n3. **Base (BASE)**: Uniswap, Apestore\n4. **Sui (SUI)**: Cetus, SuiSwap, MovePump\n5. **TON (The Open Network)**: All swaps, Gas Pump\n\nSelect an option to proceed:`, {
+  bot.sendMessage(chatId, `🚀 Welcome to Sprint Multi-Chain Volume Booster & Micro Buy 🚀
+Boost your project’s visibility with our powerful Volume Booster and Micro Buy services. Rise to the top of trending charts or increase token volume across multiple blockchains. Sprint equips you with the tools to dominate the DEXs and trading platforms.
+
+📈 Services Available:
+• Volume Booster: Increase token volume on key DEXs.
+• Micro Buy: Generate micro-transactions to enhance token visibility.
+• Bumping: Get featured on the front page of platforms like Pump.fun.
+
+🌐 Supported Chains & Pools:
+1. Ethereum (ETH): Uniswap (V2/V3)
+2. Solana (SOL): Raydium, PumpFun
+3. Base (BASE): Uniswap, Apestore
+4. Sui (SUI): Cetus, SuiSwap, MovePump
+5. TON (The Open Network): All swaps, Gas Pump
+
+Select an option to proceed:`, {
     reply_markup: {
       keyboard: [
         [{ text: "🚀 Start Bumping" }],
@@ -80,7 +95,7 @@ bot.on('message', (msg) => {
 
   // Referral Program Flow
   if (msg.text === '👥 Referral Program') {
-    bot.sendMessage(chatId, `Here's your unique referral link: ${url}/ref/${username}\nYou have referred ${userReferrals[username]?.length || 0} users. Each successful referral earns you bonus credits!`, {
+    bot.sendMessage(chatId, `Here's your unique referral link: t.me/MultichainVolumeBot?start=${username}\nYou have referred ${userReferrals[username]?.length || 0} users. Each successful referral earns you bonus credits!`, {
       reply_markup: {
         keyboard: [
           [{ text: "Main Menu" }, { text: "Back" }]
@@ -95,7 +110,7 @@ bot.on('message', (msg) => {
     bot.sendMessage(chatId, "Need help? Contact us at support@sprintbooster.com or visit our support page: https://sprintbooster.com/help.", {
       reply_markup: {
         keyboard: [
-          [{ text: "Main Menu" }, { text: "Back" }]
+          [{ text: "Main Menu" }]
         ],
         resize_keyboard: true
       }
@@ -197,7 +212,7 @@ function handleStartBumping(chatId) {
               });
 
               bot.once('message', () => {
-                bot.sendMessage(chatId, `Payment confirmed! Here's your unique referral link: ${url}/ref/${msg.chat.username}`);
+                bot.sendMessage(chatId, `Payment confirmed! Here's your unique referral link: t.me/MultichainVolumeBot?start=${msg.chat.username}`);
                 storeReferral(msg.chat.username);
               });
             });
@@ -210,11 +225,11 @@ function handleStartBumping(chatId) {
 
 // Handle Volume Boost Flow
 function handleVolumeBoost(chatId) {
-  bot.sendMessage(chatId, `Select a Volume Boost package:\n\n- Starter: $150, 11,600 vol\n- Basic: $300, 23,200 vol\n- Pro: $900, 69,000 vol\n- Advanced: $1,800, 138,000 vol\n- Ultimate: $3,600, 276,000 vol`, {
+  bot.sendMessage(chatId, `Select a Volume Boost package:\n\n- Starter: $100\n- Basic: $200\n- Pro: $400\n- Advanced: $1000`, {
     reply_markup: {
       keyboard: [
         [{ text: "Starter" }, { text: "Basic" }],
-        [{ text: "Pro" }, { text: "Advanced" }, { text: "Ultimate" }],
+        [{ text: "Pro" }, { text: "Advanced" }],
         [{ text: "Cancel" }],
         [{ text: "Back" }, { text: "Main Menu" }]
       ],
@@ -259,7 +274,7 @@ function handleVolumeBoost(chatId) {
 
         if (msg.text === 'Deposit') {
           const volumeWallet = wallets.ETH; // Assuming default ETH for Volume Boost
-          bot.sendMessage(chatId, `Transfer to: ${volumeWallet}\nMin amount: $150.\nSend the transaction hash and screenshot once complete.`, {
+          bot.sendMessage(chatId, `Transfer to: ${volumeWallet}\nMin amount: $100.\nSend the transaction hash and screenshot once complete.`, {
             reply_markup: {
               keyboard: [
                 [{ text: "Cancel" }],
@@ -280,11 +295,11 @@ function handleVolumeBoost(chatId) {
 
 // Handle Micro Buy Boost Flow
 function handleMicroBuyBoost(chatId) {
-  bot.sendMessage(chatId, `Choose a Micro Buy Boost package:\n\n- Lite: $200, 3200 transactions\n- Standard: $400, 6400 transactions\n- Premium: $1200, 19,200 transactions\n- Enterprise: $2400, 38,400 transactions\n- Supreme: $4800, 76,800 transactions`, {
+  bot.sendMessage(chatId, `Choose a Micro Buy Boost package:\n\n- Lite: $100\n- Standard: $200\n- Premium: $400\n- Supreme: $1000`, {
     reply_markup: {
       keyboard: [
         [{ text: "Lite" }, { text: "Standard" }],
-        [{ text: "Premium" }, { text: "Enterprise" }, { text: "Supreme" }],
+        [{ text: "Premium" }, { text: "Supreme" }],
         [{ text: "Cancel" }],
         [{ text: "Back" }, { text: "Main Menu" }]
       ],
@@ -329,7 +344,7 @@ function handleMicroBuyBoost(chatId) {
 
         if (msg.text === 'Deposit') {
           const microBuyWallet = wallets.SOL; // Assuming default SOL for Micro Buy Boost
-          bot.sendMessage(chatId, `Deposit at: ${microBuyWallet}\nMin: $200\nSend the transaction hash & screenshot once completed.`, {
+          bot.sendMessage(chatId, `Deposit at: ${microBuyWallet}\nMin: $100\nSend the transaction hash & screenshot once completed.`, {
             reply_markup: {
               keyboard: [
                 [{ text: "Cancel" }],
