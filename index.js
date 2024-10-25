@@ -13,7 +13,7 @@ const bot = new TelegramBot(process.env.TELEGRAM_API_TOKEN, {
 
 const url = process.env.RENDER_EXTERNAL_URL || "your-url-here";
 const port = process.env.PORT || 3000;
-bot.setWebHook(${url}/bot${process.env.TELEGRAM_API_TOKEN});
+bot.setWebHook(`${url}/bot${process.env.TELEGRAM_API_TOKEN}`);
 
 app.post(/bot${process.env.TELEGRAM_API_TOKEN}, (req, res) => {
   try {
