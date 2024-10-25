@@ -65,7 +65,7 @@ Select an option to proceed:`, {
       keyboard: [
         [{ text: "🚀 Start Bumping" }],
         [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
-        [{ text: "👥 Referral Program" }, { text: "❓Help & Support" }]
+        [{ text: "❓Help & Support" }]
       ],
       resize_keyboard: true,
       one_time_keyboard: true
@@ -76,7 +76,17 @@ Select an option to proceed:`, {
 // Main Message Logic
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
-  const username = msg.chat.username || `user${chatId}`; // Get Telegram username
+
+  // Check if the user pressed "Back" or "Main Menu"
+  if (msg.text === 'Back') {
+    handleBackButton(chatId);
+    return;
+  }
+
+  if (msg.text === 'Main Menu') {
+    handleMainMenu(chatId);
+    return;
+  }
 
   // Start Bumping Flow
   if (msg.text === '🚀 Start Bumping') {
@@ -93,18 +103,6 @@ bot.on('message', (msg) => {
     handleMicroBuyBoost(chatId);
   }
 
-  // Referral Program Flow
-  if (msg.text === '👥 Referral Program') {
-    bot.sendMessage(chatId, `Here's your unique referral link: t.me/MultichainVolumeBot?start=${username}\nYou have referred ${userReferrals[username]?.length || 0} users. Each successful referral earns you bonus credits!`, {
-      reply_markup: {
-        keyboard: [
-          [{ text: "Main Menu" }, { text: "Back" }]
-        ],
-        resize_keyboard: true
-      }
-    });
-  }
-
   // Help & Support Flow
   if (msg.text === '❓Help & Support') {
     bot.sendMessage(chatId, "Need help? Contact us at support@sprintbooster.com or visit our support page: https://sprintbooster.com/help.", {
@@ -117,6 +115,36 @@ bot.on('message', (msg) => {
     });
   }
 
+  // Function to handle back navigation
+  function handleBackButton(chatId) {
+    bot.sendMessage(chatId, "Going back to the previous menu.", {
+      reply_markup: {
+        keyboard: [
+          [{ text: "🚀 Start Bumping" }],
+          [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
+          [{ text: "❓Help & Support" }]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    });
+  }
+
+  // Function to handle main menu navigation
+  function handleMainMenu(chatId) {
+    bot.sendMessage(chatId, "Redirecting to the main menu.", {
+      reply_markup: {
+        keyboard: [
+          [{ text: "🚀 Start Bumping" }],
+          [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
+          [{ text: "❓Help & Support" }]
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true
+      }
+    });
+  }
+
   // Cancel button logic
   if (msg.text === 'Cancel') {
     bot.sendMessage(chatId, "Operation cancelled. Redirecting to the main menu.", {
@@ -124,7 +152,7 @@ bot.on('message', (msg) => {
         keyboard: [
           [{ text: "🚀 Start Bumping" }],
           [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
-          [{ text: "👥 Referral Program" }, { text: "❓Help & Support" }]
+          [{ text: "❓Help & Support" }]
         ],
         resize_keyboard: true,
         one_time_keyboard: true
