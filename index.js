@@ -244,9 +244,7 @@ function handleVolumeBoost(chatId) {
         [{ text: "Starter" }, { text: "Basic" }],
         [{ text: "Pro" }, { text: "Advanced" }],
         [{ text: "Cancel" }],
-       
-
- [{ text: "Back" }, { text: "Main Menu" }]
+        [{ text: "Back" }, { text: "Main Menu" }]
       ],
       resize_keyboard: true,
       one_time_keyboard: true
