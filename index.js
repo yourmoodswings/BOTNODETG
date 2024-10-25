@@ -51,7 +51,7 @@ Boost your project’s visibility with our powerful Volume Booster and Micro Buy
 📈 Services Available:
 • Volume Booster: Increase token volume on key DEXs.
 • Micro Buy: Generate micro-transactions to enhance token visibility.
-• Bumping: Get featured on the front page of platforms like Pump.fun.
+• Bumping: Get featured on the front page of platforms like Pump..fun
 
 🌐 Supported Chains & Pools:
 1. Ethereum (ETH): Uniswap (V2/V3)
