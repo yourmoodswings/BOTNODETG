@@ -114,52 +114,37 @@ bot.on('message', (msg) => {
       }
     });
   }
-
-  // Function to handle back navigation
-  function handleBackButton(chatId) {
-    bot.sendMessage(chatId, "Going back to the previous menu.", {
-      reply_markup: {
-        keyboard: [
-          [{ text: "🚀 Start Bumping" }],
-          [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
-          [{ text: "❓Help & Support" }]
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-  }
-
-  // Function to handle main menu navigation
-  function handleMainMenu(chatId) {
-    bot.sendMessage(chatId, "Redirecting to the main menu.", {
-      reply_markup: {
-        keyboard: [
-          [{ text: "🚀 Start Bumping" }],
-          [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
-          [{ text: "❓Help & Support" }]
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-  }
-
-  // Cancel button logic
-  if (msg.text === 'Cancel') {
-    bot.sendMessage(chatId, "Operation cancelled. Redirecting to the main menu.", {
-      reply_markup: {
-        keyboard: [
-          [{ text: "🚀 Start Bumping" }],
-          [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
-          [{ text: "❓Help & Support" }]
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true
-      }
-    });
-  }
 });
+
+// Function to handle back navigation
+function handleBackButton(chatId) {
+  bot.sendMessage(chatId, "Going back to the previous menu.", {
+    reply_markup: {
+      keyboard: [
+        [{ text: "🚀 Start Bumping" }],
+        [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
+        [{ text: "❓Help & Support" }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true
+    }
+  });
+}
+
+// Function to handle main menu navigation
+function handleMainMenu(chatId) {
+  bot.sendMessage(chatId, "Redirecting to the main menu.", {
+    reply_markup: {
+      keyboard: [
+        [{ text: "🚀 Start Bumping" }],
+        [{ text: "📈 Volume Boost" }, { text: "📊 Micro Buy Boost" }],
+        [{ text: "❓Help & Support" }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true
+    }
+  });
+}
 
 // Handle Start Bumping Flow
 function handleStartBumping(chatId) {
@@ -253,7 +238,7 @@ function handleStartBumping(chatId) {
 
 // Handle Volume Boost Flow
 function handleVolumeBoost(chatId) {
-  bot.sendMessage(chatId, `Select a Volume Boost package:\n\n- Starter: $100\n- Basic: $200\n- Pro: $400\n- Advanced: $1000`, {
+  bot.sendMessage(chatId, `Select a Volume Boost package:\n\n- Starter: $100 (11,600 vol)\n- Basic: $200 (23,200 vol)\n- Pro: $400 (46,400 vol)\n- Advanced: $1000 (92,800 vol)`, {
     reply_markup: {
       keyboard: [
         [{ text: "Starter" }, { text: "Basic" }],
@@ -323,7 +308,7 @@ function handleVolumeBoost(chatId) {
 
 // Handle Micro Buy Boost Flow
 function handleMicroBuyBoost(chatId) {
-  bot.sendMessage(chatId, `Choose a Micro Buy Boost package:\n\n- Lite: $100\n- Standard: $200\n- Premium: $400\n- Supreme: $1000`, {
+  bot.sendMessage(chatId, `Choose a Micro Buy Boost package:\n\n- Lite: $100 (3,200 transactions)\n- Standard: $200 (6,400 transactions)\n- Premium: $400 (12,800 transactions)\n- Supreme: $1000 (25,600 transactions)`, {
     reply_markup: {
       keyboard: [
         [{ text: "Lite" }, { text: "Standard" }],
